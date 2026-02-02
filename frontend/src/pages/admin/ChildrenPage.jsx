@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { childrenApi, caregiversApi } from '../../utils/api';
 import GrantStatusBadge from '../../components/GrantStatusBadge';
-import { translateGrantType, translateWeekday, formatDate } from '../../utils/helpers';
+import { translateGrantType, translateWeekday, formatDate, padMaNumber } from '../../utils/helpers';
 
 // Icons
 const PlusIcon = () => (
@@ -354,7 +354,7 @@ export default function ChildrenPage({ readOnly = false }) {
                                                 className="rounded border-gray-300 text-[#B54A32] focus:ring-[#B54A32]"
                                             />
                                             <span className="text-sm font-medium text-gray-700">{cg.first_name} {cg.last_name}</span>
-                                            <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded">{cg.ma_number}</span>
+                                            <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded font-mono">{padMaNumber(cg.ma_number)}</span>
                                         </label>
                                     ))}
                                     {caregivers.length === 0 && (

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { timeEntriesApi, childrenApi, caregiversApi, exportApi, settingsApi } from '../../utils/api';
-import { formatHours } from '../../utils/helpers';
+import { formatHours, padMaNumber } from '../../utils/helpers';
 
 // Icons
 const ClockIcon = () => (
@@ -135,8 +135,8 @@ export default function ApprovalPage({ isMobileView = false, userRole = 'admin' 
     const [viewReasonModal, setViewReasonModal] = useState({ open: false, reason: '', entry: null });
     const [isCompactView, setIsCompactView] = useState(true);
 
-    // Sorterings-state: key + direction
-    const [sortConfig, setSortConfig] = useState({ key: 'caregiver_name', direction: 'asc' });
+    // Sorterings-state: key + direction (default: dato, nyeste først)
+    const [sortConfig, setSortConfig] = useState({ key: 'date', direction: 'desc' });
 
     // Periode-søgning for godkendte indberetninger
     const [approvedFromDate, setApprovedFromDate] = useState('');
@@ -150,15 +150,9 @@ export default function ApprovalPage({ isMobileView = false, userRole = 'admin' 
     // Automatisk kompakt visning på mobil
     const effectiveCompactView = isMobileView || isCompactView;
 
-    // Sæt default sortering baseret på aktiv tab
+    // Sæt default sortering baseret på aktiv tab (dato, nyeste først)
     useEffect(() => {
-        if (activeTab === 'pending') {
-            setSortConfig({ key: 'caregiver_name', direction: 'asc' });
-        } else if (activeTab === 'approved') {
-            setSortConfig({ key: 'child_name', direction: 'asc' });
-        } else if (activeTab === 'rejected') {
-            setSortConfig({ key: 'caregiver_name', direction: 'asc' });
-        }
+        setSortConfig({ key: 'date', direction: 'desc' });
     }, [activeTab]);
 
     useEffect(() => {
@@ -408,6 +402,25 @@ export default function ApprovalPage({ isMobileView = false, userRole = 'admin' 
         return parts;
     }
 
+    // Beregn opsummering af alle timer
+    function calculateSummary(entries) {
+        return entries.reduce((acc, entry) => ({
+            totalHours: acc.totalHours + (entry.total_hours || 0),
+            normalHours: acc.normalHours + (entry.normal_hours || 0),
+            eveningHours: acc.eveningHours + (entry.evening_hours || 0),
+            nightHours: acc.nightHours + (entry.night_hours || 0),
+            saturdayHours: acc.saturdayHours + (entry.saturday_hours || 0),
+            sundayHours: acc.sundayHours + (entry.sunday_holiday_hours || 0),
+            count: acc.count + 1
+        }), {
+            totalHours: 0, normalHours: 0, eveningHours: 0,
+            nightHours: 0, saturdayHours: 0, sundayHours: 0, count: 0
+        });
+    }
+
+    // Beregn opsummering for aktuelle filtrerede entries
+    const summary = calculateSummary(filteredEntries);
+
     // Beregn statistik - kun overskridelser
     const exceededCount = filteredEntries.filter(e => getGrantStatus(e.child_id)?.isExceeded).length;
 
@@ -515,6 +528,52 @@ export default function ApprovalPage({ isMobileView = false, userRole = 'admin' 
                     ))}
                 </div>
 
+                {/* Summary Card - Kompakt inline design */}
+                {filteredEntries.length > 0 && (
+                    <div className="px-4 py-2.5 bg-gray-50 border-b border-gray-200">
+                        <div className="flex flex-wrap items-center gap-x-6 gap-y-1">
+                            {/* Hovedtal */}
+                            <div className="flex items-center gap-4">
+                                <span className="text-xs text-gray-500 uppercase tracking-wide font-medium">Opsummering:</span>
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white rounded-lg border border-gray-200">
+                                    <span className="text-sm font-semibold text-gray-900">{summary.count}</span>
+                                    <span className="text-xs text-gray-500">stk</span>
+                                </span>
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#B54A32]/10 rounded-lg border border-[#B54A32]/20">
+                                    <span className="text-sm font-bold text-[#B54A32]">{formatHours(summary.totalHours)}</span>
+                                    <span className="text-xs text-[#B54A32]/70">timer</span>
+                                </span>
+                            </div>
+                            {/* Separator */}
+                            <div className="hidden sm:block h-4 w-px bg-gray-300"></div>
+                            {/* Tillægsfordeling med navne */}
+                            <div className="flex items-center gap-4 text-xs">
+                                <span className="text-gray-400">Fordeling:</span>
+                                <span className="inline-flex items-center gap-1.5">
+                                    <span className="text-gray-500">Normal:</span>
+                                    <span className="font-semibold text-blue-600">{formatHours(summary.normalHours)}</span>
+                                </span>
+                                <span className="inline-flex items-center gap-1.5">
+                                    <span className="text-gray-500">Aften:</span>
+                                    <span className="font-semibold text-purple-600">{formatHours(summary.eveningHours)}</span>
+                                </span>
+                                <span className="inline-flex items-center gap-1.5">
+                                    <span className="text-gray-500">Nat:</span>
+                                    <span className="font-semibold text-indigo-600">{formatHours(summary.nightHours)}</span>
+                                </span>
+                                <span className="inline-flex items-center gap-1.5">
+                                    <span className="text-gray-500">Lørdag:</span>
+                                    <span className="font-semibold text-orange-600">{formatHours(summary.saturdayHours)}</span>
+                                </span>
+                                <span className="inline-flex items-center gap-1.5">
+                                    <span className="text-gray-500">Søn/Hellig:</span>
+                                    <span className="font-semibold text-red-600">{formatHours(summary.sundayHours)}</span>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {/* Filters */}
                 <div className="p-4 bg-white border-b border-gray-200">
                     <div className="flex flex-wrap items-center gap-3">
@@ -556,6 +615,28 @@ export default function ApprovalPage({ isMobileView = false, userRole = 'admin' 
                                 </option>
                             ))}
                         </select>
+
+                        {/* Sortering */}
+                        <div className="flex items-center gap-2">
+                            <span className="text-xs text-gray-500 font-medium">Sortér:</span>
+                            <select
+                                value={`${sortConfig.key}-${sortConfig.direction}`}
+                                onChange={(e) => {
+                                    const [key, direction] = e.target.value.split('-');
+                                    setSortConfig({ key, direction });
+                                }}
+                                className="px-3 py-2.5 bg-white border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-[#B54A32]/20"
+                            >
+                                <option value="date-desc">Dato (nyeste først)</option>
+                                <option value="date-asc">Dato (ældste først)</option>
+                                <option value="caregiver_name-asc">Barnepige (A-Å)</option>
+                                <option value="caregiver_name-desc">Barnepige (Å-A)</option>
+                                <option value="child_name-asc">Barn (A-Å)</option>
+                                <option value="child_name-desc">Barn (Å-A)</option>
+                                <option value="total_hours-desc">Timer (flest først)</option>
+                                <option value="total_hours-asc">Timer (færrest først)</option>
+                            </select>
+                        </div>
 
                         {/* Periode-søgning for godkendte - kun for admin */}
                         {activeTab === 'approved' && userRole === 'admin' && (
@@ -688,7 +769,7 @@ export default function ApprovalPage({ isMobileView = false, userRole = 'admin' 
                                                 <div className="font-medium text-gray-900 text-sm">
                                                     {entry.caregiver_first_name} {entry.caregiver_last_name}
                                                 </div>
-                                                <div className="text-xs text-gray-500 font-mono">{entry.ma_number}</div>
+                                                <div className="text-xs text-gray-500 font-mono">{padMaNumber(entry.ma_number)}</div>
                                             </td>
                                             <td className="px-4 py-3">
                                                 <div className="font-medium text-gray-900 text-sm">
@@ -790,28 +871,26 @@ export default function ApprovalPage({ isMobileView = false, userRole = 'admin' 
                 ) : (
                     /* DETAILED CARD VIEW */
                     <div className="p-4">
-                        {/* Sorteringsbar for detaljeret visning */}
-                        <div className="flex items-center gap-2 mb-4 text-xs text-gray-500">
-                            <span className="font-medium">Sortér:</span>
-                            {[
-                                { key: 'caregiver_name', label: 'Barnepige' },
-                                { key: 'child_name', label: 'Barn' },
-                                { key: 'date', label: 'Dato' },
-                                { key: 'total_hours', label: 'Timer' },
-                            ].map(item => (
-                                <button
-                                    key={item.key}
-                                    onClick={() => handleSort(item.key)}
-                                    className={`px-3 py-1.5 rounded-lg border transition-all flex items-center gap-1 ${
-                                        sortConfig.key === item.key
-                                            ? 'bg-[#B54A32]/10 border-[#B54A32]/30 text-[#B54A32] font-semibold'
-                                            : 'bg-white border-gray-200 hover:border-gray-300 text-gray-600'
-                                    }`}
-                                >
-                                    {item.label}
-                                    {sortConfig.key === item.key && <SortIcon direction={sortConfig.direction} />}
-                                </button>
-                            ))}
+                        {/* Sortering - samme som tabelvisning */}
+                        <div className="flex items-center gap-2 mb-4">
+                            <span className="text-xs text-gray-500 font-medium">Sortér:</span>
+                            <select
+                                value={`${sortConfig.key}-${sortConfig.direction}`}
+                                onChange={(e) => {
+                                    const [key, direction] = e.target.value.split('-');
+                                    setSortConfig({ key, direction });
+                                }}
+                                className="px-3 py-2 bg-white border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-[#B54A32]/20"
+                            >
+                                <option value="date-desc">Dato (nyeste først)</option>
+                                <option value="date-asc">Dato (ældste først)</option>
+                                <option value="caregiver_name-asc">Barnepige (A-Å)</option>
+                                <option value="caregiver_name-desc">Barnepige (Å-A)</option>
+                                <option value="child_name-asc">Barn (A-Å)</option>
+                                <option value="child_name-desc">Barn (Å-A)</option>
+                                <option value="total_hours-desc">Timer (flest først)</option>
+                                <option value="total_hours-asc">Timer (færrest først)</option>
+                            </select>
                         </div>
 
                         <div className="grid gap-3">
@@ -872,7 +951,7 @@ export default function ApprovalPage({ isMobileView = false, userRole = 'admin' 
                                                                     <div className="font-semibold text-gray-900">
                                                                         {entry.caregiver_first_name} {entry.caregiver_last_name}
                                                                     </div>
-                                                                    <div className="text-xs text-gray-500 font-mono">{entry.ma_number}</div>
+                                                                    <div className="text-xs text-gray-500 font-mono">{padMaNumber(entry.ma_number)}</div>
                                                                 </div>
 
                                                                 {/* Barn */}

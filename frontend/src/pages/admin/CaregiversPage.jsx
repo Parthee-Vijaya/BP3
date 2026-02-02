@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { caregiversApi, childrenApi } from '../../utils/api';
+import { padMaNumber } from '../../utils/helpers';
 
 // Icons
 const PlusIcon = () => (
@@ -38,24 +39,18 @@ const CloseIcon = () => (
     </svg>
 );
 
-// MA-nummer validering - altid præcis 8 cifre (paddes med foranstillede 0'er)
+// MA-nummer validering - skal være præcis 8 cifre (kun tal)
 function validateMaNumber(value) {
     if (!value) return { valid: false, error: 'MA-nummer er påkrævet' };
     const cleaned = value.replace(/\D/g, ''); // Kun tal
-    if (cleaned.length === 0) return { valid: false, error: 'MA-nummer skal indeholde tal' };
-    if (cleaned.length > 8) return { valid: false, error: 'MA-nummer må max være 8 cifre' };
+    if (cleaned.length === 0) return { valid: false, error: 'MA-nummer skal kun indeholde tal' };
+    if (cleaned.length !== 8) return { valid: false, error: 'MA-nummer skal være præcis 8 cifre' };
     return { valid: true, error: '' };
 }
 
 function formatMaNumber(value) {
     // Fjern alt undtagen tal og begræns til 8 cifre
     return value.replace(/\D/g, '').slice(0, 8);
-}
-
-// Pad MA-nummer med foranstillede 0'er til 8 cifre
-function padMaNumber(value) {
-    const cleaned = value.replace(/\D/g, '').slice(0, 8);
-    return cleaned.padStart(8, '0');
 }
 
 export default function CaregiversPage({ readOnly = false }) {
@@ -224,8 +219,8 @@ export default function CaregiversPage({ readOnly = false }) {
                                             </div>
                                         </td>
                                         <td className="px-5 py-4">
-                                            <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium bg-white/50 text-gray-700 border border-white/30">
-                                                {caregiver.ma_number}
+                                            <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-mono font-medium bg-white/50 text-gray-700 border border-white/30">
+                                                {padMaNumber(caregiver.ma_number || '')}
                                             </span>
                                         </td>
                                         <td className="px-5 py-4 text-sm text-gray-500">
@@ -335,9 +330,11 @@ export default function CaregiversPage({ readOnly = false }) {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-2">MA-nummer * (8 cifre)</label>
+                                <label className="block text-sm font-semibold text-gray-700 mb-2">MA-nummer * (præcis 8 cifre)</label>
                                 <input
                                     type="text"
+                                    inputMode="numeric"
+                                    pattern="[0-9]*"
                                     value={formData.ma_number}
                                     onChange={(e) => {
                                         const formatted = formatMaNumber(e.target.value);
@@ -345,16 +342,16 @@ export default function CaregiversPage({ readOnly = false }) {
                                         const validation = validateMaNumber(formatted);
                                         setMaError(validation.valid ? '' : validation.error);
                                     }}
-                                    placeholder="Indtast 1-8 cifre (paddes automatisk)"
+                                    placeholder="12345678"
                                     maxLength={8}
-                                    className={`glass-input w-full rounded-xl px-4 py-2.5 ${
+                                    className={`glass-input w-full rounded-xl px-4 py-2.5 font-mono ${
                                         maError ? 'border-red-400 focus:border-red-500' : ''
                                     }`}
                                 />
                                 {maError && (
                                     <p className="mt-1.5 text-xs text-red-600 font-medium">{maError}</p>
                                 )}
-                                <p className="mt-1.5 text-xs text-gray-400">Kun tal, paddes til 8 cifre med foranstillede 0'er (fx "123" → "00000123")</p>
+                                <p className="mt-1.5 text-xs text-gray-400">Kun tal, præcis 8 cifre påkrævet</p>
                             </div>
 
                             <div>

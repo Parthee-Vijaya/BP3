@@ -137,7 +137,7 @@ export default function Layout({ children, userRole, onRoleChange, isMobileView,
         <div className="min-h-screen flex flex-col">
             {/* Header - Kalundborg rød */}
             <header className="bg-[#B54A32] sticky top-0 z-50 shadow-lg">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+                <div className="w-full px-6 lg:px-12 py-4">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-6">
                             {/* Logo */}
@@ -203,7 +203,7 @@ export default function Layout({ children, userRole, onRoleChange, isMobileView,
 
             {/* Navigation - Hvid baggrund */}
             <nav className="bg-white sticky top-[72px] z-40 border-b border-gray-200 shadow-sm">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="w-full px-6 lg:px-12">
                     <div className="flex gap-2 overflow-x-auto py-2">
                         {navItems.map((item) => (
                             <Link
@@ -226,7 +226,7 @@ export default function Layout({ children, userRole, onRoleChange, isMobileView,
             </nav>
 
             {/* Main content */}
-            <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <main className="flex-1 w-full px-6 lg:px-12 py-8">
                 <div className="animate-fade-in">
                     {children}
                 </div>
@@ -234,7 +234,7 @@ export default function Layout({ children, userRole, onRoleChange, isMobileView,
 
             {/* Footer - Hvid baggrund */}
             <footer className="bg-white mt-auto border-t border-gray-200">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                <div className="w-full px-6 lg:px-12 py-6">
                     <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                         <div className="flex items-center gap-3 text-[#B54A32]">
                             <div className="p-2 bg-[#B54A32]/10 rounded-xl">

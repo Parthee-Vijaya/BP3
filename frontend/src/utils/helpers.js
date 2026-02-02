@@ -77,3 +77,10 @@ export function formatHours(hours) {
     const rounded = Math.round(h * 4) / 4;
     return rounded.toFixed(2).replace('.', ',');
 }
+
+// Formater MA-nummer til præcis 8 cifre med foranstillede 0'er
+export function padMaNumber(value) {
+    if (!value) return '00000000';
+    const cleaned = String(value).replace(/\D/g, '').slice(0, 8);
+    return cleaned.padStart(8, '0');
+}
