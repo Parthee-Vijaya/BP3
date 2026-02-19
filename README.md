@@ -2,6 +2,8 @@
 
 Webbaseret system til registrering og godkendelse af timer for barnepiger i Kalundborg Kommune.
 
+> **Bemærk:** Alle navne, MA-numre, børn og timeregistreringer vist i screenshots og i databasen er **mockdata og testdata** genereret udelukkende til test- og demonstrationsformål. Ingen persondata indgår.
+
 ![Admin Dashboard](docs/screenshots/admin-dashboard.png)
 
 ## Quick Start
