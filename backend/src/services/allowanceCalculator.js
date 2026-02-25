@@ -33,6 +33,11 @@ function getDanishHolidays(year) {
     holidays.push(`${year}-12-26`); // 2. Juledag
     holidays.push(`${year}-12-31`); // Nytårsaftensdag (behandles som helligdag)
 
+    // Særskilte datoer (HEAO-afklaring): 21. jan 2026 m.m.
+    if (year === 2026) {
+        holidays.push('2026-01-21');
+    }
+
     // Påskebaserede helligdage (beregnes ud fra påskedag)
     const easterDate = calculateEasterDate(year);
 

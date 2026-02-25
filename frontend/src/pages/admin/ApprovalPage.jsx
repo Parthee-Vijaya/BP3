@@ -133,6 +133,7 @@ export default function ApprovalPage({ isMobileView = false, userRole = 'admin' 
     const [rejectModal, setRejectModal] = useState({ open: false, entryId: null });
     const [rejectReason, setRejectReason] = useState('');
     const [viewReasonModal, setViewReasonModal] = useState({ open: false, reason: '', entry: null });
+    const [payrollModal, setPayrollModal] = useState({ open: false, entryId: null, payrollDate: new Date().toISOString().slice(0, 10) });
     const [isCompactView, setIsCompactView] = useState(true);
 
     // Sorterings-state: key + direction (default: dato, nyeste først)
@@ -150,9 +151,11 @@ export default function ApprovalPage({ isMobileView = false, userRole = 'admin' 
     // Automatisk kompakt visning på mobil
     const effectiveCompactView = isMobileView || isCompactView;
 
-    // Sæt default sortering baseret på aktiv tab (dato, nyeste først)
+    // Standardsortering pr. tab: Afventer = barnepige, Godkendte = barn, Afviste = barnepige
     useEffect(() => {
-        setSortConfig({ key: 'date', direction: 'desc' });
+        if (activeTab === 'pending') setSortConfig({ key: 'caregiver_name', direction: 'asc' });
+        else if (activeTab === 'approved') setSortConfig({ key: 'child_name', direction: 'asc' });
+        else if (activeTab === 'rejected') setSortConfig({ key: 'caregiver_name', direction: 'asc' });
     }, [activeTab]);
 
     useEffect(() => {
@@ -324,9 +327,15 @@ export default function ApprovalPage({ isMobileView = false, userRole = 'admin' 
         }
     }
 
-    async function handleMarkPayroll(id) {
+    function openPayrollModal(entryId) {
+        setPayrollModal({ open: true, entryId, payrollDate: new Date().toISOString().slice(0, 10) });
+    }
+
+    async function handleMarkPayroll() {
+        if (!payrollModal.entryId) return;
         try {
-            await timeEntriesApi.markPayroll(id);
+            await timeEntriesApi.markPayroll(payrollModal.entryId, payrollModal.payrollDate);
+            setPayrollModal({ open: false, entryId: null, payrollDate: new Date().toISOString().slice(0, 10) });
             loadData();
         } catch (error) {
             alert('Fejl: ' + error.message);
@@ -766,15 +775,23 @@ export default function ApprovalPage({ isMobileView = false, userRole = 'admin' 
                                                 </td>
                                             )}
                                             <td className="px-4 py-3">
-                                                <div className="font-medium text-gray-900 text-sm">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setSelectedCaregiver(String(entry.caregiver_id))}
+                                                    className="text-left font-medium text-sm text-[#B54A32] hover:underline focus:outline-none focus:ring-2 focus:ring-[#B54A32]/30 rounded"
+                                                >
                                                     {entry.caregiver_first_name} {entry.caregiver_last_name}
-                                                </div>
+                                                </button>
                                                 <div className="text-xs text-gray-500 font-mono">{padMaNumber(entry.ma_number)}</div>
                                             </td>
                                             <td className="px-4 py-3">
-                                                <div className="font-medium text-gray-900 text-sm">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setSelectedChild(String(entry.child_id))}
+                                                    className="text-left font-medium text-sm text-[#B54A32] hover:underline focus:outline-none focus:ring-2 focus:ring-[#B54A32]/30 rounded"
+                                                >
                                                     {entry.child_first_name} {entry.child_last_name}
-                                                </div>
+                                                </button>
                                             </td>
                                             <td className="px-4 py-3">
                                                 <div className="text-sm text-gray-900">{formatShortDate(entry.date)}</div>
@@ -845,7 +862,7 @@ export default function ApprovalPage({ isMobileView = false, userRole = 'admin' 
                                                             </span>
                                                         ) : (
                                                             <button
-                                                                onClick={() => handleMarkPayroll(entry.id)}
+                                                                onClick={() => openPayrollModal(entry.id)}
                                                                 className="px-3 py-1.5 bg-[#B54A32] text-white text-xs rounded-lg font-medium hover:bg-[#9a3f2b] transition-colors"
                                                             >
                                                                 Send til løn
@@ -948,9 +965,13 @@ export default function ApprovalPage({ isMobileView = false, userRole = 'admin' 
                                                                         <UserIcon />
                                                                         Barnepige
                                                                     </div>
-                                                                    <div className="font-semibold text-gray-900">
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => setSelectedCaregiver(String(entry.caregiver_id))}
+                                                                        className="text-left font-semibold text-gray-900 hover:text-[#B54A32] hover:underline focus:outline-none focus:ring-2 focus:ring-[#B54A32]/30 rounded"
+                                                                    >
                                                                         {entry.caregiver_first_name} {entry.caregiver_last_name}
-                                                                    </div>
+                                                                    </button>
                                                                     <div className="text-xs text-gray-500 font-mono">{padMaNumber(entry.ma_number)}</div>
                                                                 </div>
 
@@ -962,9 +983,13 @@ export default function ApprovalPage({ isMobileView = false, userRole = 'admin' 
                                                                         </svg>
                                                                         Barn
                                                                     </div>
-                                                                    <div className="font-semibold text-gray-900">
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => setSelectedChild(String(entry.child_id))}
+                                                                        className="text-left font-semibold text-gray-900 hover:text-[#B54A32] hover:underline focus:outline-none focus:ring-2 focus:ring-[#B54A32]/30 rounded"
+                                                                    >
                                                                         {entry.child_first_name} {entry.child_last_name}
-                                                                    </div>
+                                                                    </button>
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -1061,7 +1086,7 @@ export default function ApprovalPage({ isMobileView = false, userRole = 'admin' 
                                                                     </span>
                                                                 ) : (
                                                                     <button
-                                                                        onClick={() => handleMarkPayroll(entry.id)}
+                                                                        onClick={() => openPayrollModal(entry.id)}
                                                                         className="px-4 py-2 bg-[#B54A32] text-white rounded-lg font-medium hover:bg-[#9a3f2b] transition-all"
                                                                     >
                                                                         Send til løn
@@ -1261,6 +1286,33 @@ export default function ApprovalPage({ isMobileView = false, userRole = 'admin' 
                                     setNewMonthInterval({ start_day: monthInterval.start_day, end_day: monthInterval.end_day });
                                 }}
                                 className="flex-1 px-5 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 font-medium transition-all"
+                            >
+                                Annuller
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Registreret i løn – dato-modal */}
+            {payrollModal.open && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm">
+                        <h3 className="text-lg font-bold text-gray-900 mb-2">Registreret i lønsystem</h3>
+                        <p className="text-sm text-gray-500 mb-4">Vælg dato for indberetning (fx ved manuel indberetning).</p>
+                        <input
+                            type="date"
+                            value={payrollModal.payrollDate}
+                            onChange={(e) => setPayrollModal({ ...payrollModal, payrollDate: e.target.value })}
+                            className="w-full border border-gray-300 rounded-xl px-4 py-3 mb-4 focus:ring-2 focus:ring-[#B54A32]/20"
+                        />
+                        <div className="flex gap-3">
+                            <button onClick={handleMarkPayroll} className="flex-1 px-4 py-3 btn-kalundborg rounded-xl font-medium">
+                                Gem
+                            </button>
+                            <button
+                                onClick={() => setPayrollModal({ open: false, entryId: null, payrollDate: new Date().toISOString().slice(0, 10) })}
+                                className="flex-1 px-4 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 font-medium"
                             >
                                 Annuller
                             </button>

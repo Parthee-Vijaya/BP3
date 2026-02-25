@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { childrenApi, caregiversApi } from '../../utils/api';
+import { childrenApi, caregiversApi, extraGrantsApi } from '../../utils/api';
 import GrantStatusBadge from '../../components/GrantStatusBadge';
 import { translateGrantType, translateWeekday, formatDate, padMaNumber } from '../../utils/helpers';
 
@@ -47,6 +47,10 @@ export default function ChildrenPage({ readOnly = false }) {
     const [editModal, setEditModal] = useState({ open: false, child: null });
     const [formData, setFormData] = useState({});
     const [searchQuery, setSearchQuery] = useState('');
+    const [extraGrantsModal, setExtraGrantsModal] = useState({ open: false, child: null });
+    const [extraGrantsList, setExtraGrantsList] = useState([]);
+    const [extraGrantForm, setExtraGrantForm] = useState({ hours: '', from_date: '', to_date: '', comment: '' });
+    const [editingExtraId, setEditingExtraId] = useState(null);
 
     useEffect(() => {
         loadData();
@@ -120,6 +124,61 @@ export default function ChildrenPage({ readOnly = false }) {
         } catch (error) {
             alert('Fejl ved sletning: ' + error.message);
         }
+    }
+
+    async function openExtraGrantsModal(child) {
+        setExtraGrantsModal({ open: true, child });
+        setExtraGrantForm({ hours: '', from_date: '', to_date: '', comment: '' });
+        setEditingExtraId(null);
+        try {
+            const list = await extraGrantsApi.getAll(child.id);
+            setExtraGrantsList(list);
+        } catch (e) {
+            setExtraGrantsList([]);
+        }
+    }
+
+    async function saveExtraGrant() {
+        if (!extraGrantsModal.child) return;
+        const { hours, from_date, to_date, comment } = extraGrantForm;
+        if (!hours || !from_date || !to_date) {
+            alert('Udfyld timer, fra-dato og til-dato');
+            return;
+        }
+        try {
+            if (editingExtraId) {
+                await extraGrantsApi.update(editingExtraId, { hours: Number(hours), from_date, to_date, comment });
+            } else {
+                await extraGrantsApi.create({ child_id: extraGrantsModal.child.id, hours: Number(hours), from_date, to_date, comment });
+            }
+            setExtraGrantForm({ hours: '', from_date: '', to_date: '', comment: '' });
+            setEditingExtraId(null);
+            const list = await extraGrantsApi.getAll(extraGrantsModal.child.id);
+            setExtraGrantsList(list);
+        } catch (e) {
+            alert('Fejl: ' + e.message);
+        }
+    }
+
+    async function deleteExtraGrant(id) {
+        if (!confirm('Slet denne ekstrabevilling?')) return;
+        try {
+            await extraGrantsApi.delete(id);
+            const list = await extraGrantsApi.getAll(extraGrantsModal.child.id);
+            setExtraGrantsList(list);
+        } catch (e) {
+            alert('Fejl: ' + e.message);
+        }
+    }
+
+    function startEditExtra(eg) {
+        setExtraGrantForm({
+            hours: String(eg.hours),
+            from_date: eg.from_date,
+            to_date: eg.to_date,
+            comment: eg.comment || ''
+        });
+        setEditingExtraId(eg.id);
     }
 
     const weekdays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
@@ -235,6 +294,13 @@ export default function ChildrenPage({ readOnly = false }) {
                                         {!readOnly && (
                                             <td className="px-5 py-4">
                                                 <div className="flex items-center gap-1">
+                                                    <button
+                                                        onClick={() => openExtraGrantsModal(child)}
+                                                        className="p-2 text-gray-500 hover:text-purple-600 hover:bg-purple-500/10 rounded-lg transition-all duration-200 text-xs font-medium"
+                                                        title="Ekstrabevillinger"
+                                                    >
+                                                        Ekstra
+                                                    </button>
                                                     <button
                                                         onClick={() => openEditModal(child)}
                                                         className="p-2 text-gray-500 hover:text-[#B54A32] hover:bg-white/50 rounded-lg transition-all duration-200"
@@ -508,6 +574,88 @@ export default function ChildrenPage({ readOnly = false }) {
                             >
                                 Annuller
                             </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Ekstrabevillinger modal */}
+            {extraGrantsModal.open && extraGrantsModal.child && (
+                <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 overflow-y-auto p-4">
+                    <div className="glass-card-strong rounded-2xl shadow-2xl p-6 w-full max-w-lg my-8">
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-lg font-bold text-gray-900">
+                                Ekstrabevillinger – {extraGrantsModal.child.first_name} {extraGrantsModal.child.last_name}
+                            </h3>
+                            <button
+                                onClick={() => setExtraGrantsModal({ open: false, child: null })}
+                                className="p-2 text-gray-400 hover:text-gray-600 rounded-lg"
+                            >
+                                <CloseIcon />
+                            </button>
+                        </div>
+                        <p className="text-sm text-gray-500 mb-4">Ekstrabevilling lægges oven i den almindelige bevilling. Ændringer gælder fra d.d. og frem.</p>
+                        <div className="space-y-3 mb-4">
+                            <div className="grid grid-cols-3 gap-2">
+                                <input
+                                    type="number"
+                                    step="0.25"
+                                    min="0"
+                                    placeholder="Timer"
+                                    value={extraGrantForm.hours}
+                                    onChange={(e) => setExtraGrantForm({ ...extraGrantForm, hours: e.target.value })}
+                                    className="glass-input rounded-lg px-3 py-2 text-sm"
+                                />
+                                <input
+                                    type="date"
+                                    placeholder="Fra"
+                                    value={extraGrantForm.from_date}
+                                    onChange={(e) => setExtraGrantForm({ ...extraGrantForm, from_date: e.target.value })}
+                                    className="glass-input rounded-lg px-3 py-2 text-sm"
+                                />
+                                <input
+                                    type="date"
+                                    placeholder="Til"
+                                    value={extraGrantForm.to_date}
+                                    onChange={(e) => setExtraGrantForm({ ...extraGrantForm, to_date: e.target.value })}
+                                    className="glass-input rounded-lg px-3 py-2 text-sm"
+                                />
+                            </div>
+                            <input
+                                type="text"
+                                placeholder="Kommentar (valgfri)"
+                                value={extraGrantForm.comment}
+                                onChange={(e) => setExtraGrantForm({ ...extraGrantForm, comment: e.target.value })}
+                                className="glass-input w-full rounded-lg px-3 py-2 text-sm"
+                            />
+                            <div className="flex gap-2">
+                                <button onClick={saveExtraGrant} className="px-4 py-2 bg-[#B54A32] text-white rounded-lg text-sm font-medium">
+                                    {editingExtraId ? 'Gem ændring' : 'Tilføj'}
+                                </button>
+                                {editingExtraId && (
+                                    <button onClick={() => { setEditingExtraId(null); setExtraGrantForm({ hours: '', from_date: '', to_date: '', comment: '' }); }} className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm">
+                                        Annuller
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                        <div className="border-t border-white/20 pt-3">
+                            <div className="text-xs font-semibold text-gray-500 uppercase mb-2">Nuværende ekstrabevillinger</div>
+                            {extraGrantsList.length === 0 ? (
+                                <p className="text-sm text-gray-500">Ingen ekstrabevillinger</p>
+                            ) : (
+                                <ul className="space-y-2">
+                                    {extraGrantsList.map((eg) => (
+                                        <li key={eg.id} className="flex items-center justify-between py-2 px-3 bg-white/30 rounded-lg text-sm">
+                                            <span>{eg.hours} t, {formatDate(eg.from_date)} – {formatDate(eg.to_date)}{eg.comment ? ` (${eg.comment})` : ''}</span>
+                                            <div className="flex gap-1">
+                                                <button onClick={() => startEditExtra(eg)} className="p-1 text-gray-500 hover:text-[#B54A32]">Rediger</button>
+                                                <button onClick={() => deleteExtraGrant(eg.id)} className="p-1 text-gray-500 hover:text-rose-600">Slet</button>
+                                            </div>
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
                         </div>
                     </div>
                 </div>

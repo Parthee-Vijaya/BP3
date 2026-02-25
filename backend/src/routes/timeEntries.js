@@ -261,9 +261,10 @@ router.put('/:id/reject', (req, res) => {
     }
 });
 
-// PUT /api/time-entries/:id/payroll - Marker som registreret i lønsystem
+// PUT /api/time-entries/:id/payroll - Marker som registreret i lønsystem (evt. med eksplicit dato)
 router.put('/:id/payroll', (req, res) => {
     try {
+        const { payroll_date } = req.body; // Valgfri: YYYY-MM-DD for manuel indberetning
         const entry = db.prepare('SELECT * FROM time_entries WHERE id = ?').get(req.params.id);
         if (!entry) {
             return res.status(404).json({ error: 'Registrering ikke fundet' });
@@ -275,12 +276,13 @@ router.put('/:id/payroll', (req, res) => {
             });
         }
 
+        const dateValue = payroll_date || new Date().toISOString().slice(0, 10);
         db.prepare(`
             UPDATE time_entries SET
                 payroll_registered = 1,
-                payroll_date = CURRENT_TIMESTAMP
+                payroll_date = ?
             WHERE id = ?
-        `).run(req.params.id);
+        `).run(dateValue, req.params.id);
 
         const updatedEntry = db.prepare('SELECT * FROM time_entries WHERE id = ?').get(req.params.id);
         res.json(updatedEntry);

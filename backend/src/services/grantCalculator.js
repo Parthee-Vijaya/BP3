@@ -8,7 +8,7 @@
  *
  * BEVILLINGSPERIODER:
  * - Uge: Mandag → Søndag
- * - Måned: 1. → sidste dag i måneden
+ * - Måned: Bruger month_interval_history (fx d. 16 – d. 15); kalendermåned hvis ingen historik
  * - Kvartal: Q1 (01/01-31/03), Q2 (01/04-30/06), Q3 (01/07-30/09), Q4 (01/10-31/12)
  * - Halvår: H1 (01/01-30/06), H2 (01/07-31/12)
  * - År: 01/01 → 31/12
@@ -47,12 +47,8 @@ export function getGrantPeriod(grantType, dateStr) {
         }
 
         case 'month': {
-            const firstDay = new Date(year, month, 1);
-            const lastDay = new Date(year, month + 1, 0);
-            return {
-                startDate: formatDate(firstDay),
-                endDate: formatDate(lastDay)
-            };
+            const interval = getMonthIntervalForDate(dateStr);
+            return getCustomMonthPeriod(dateStr, interval.start_day, interval.end_day);
         }
 
         case 'quarter': {
@@ -118,8 +114,66 @@ function formatDate(date) {
     return `${year}-${month}-${day}`;
 }
 
+/**
+ * Hent det aktive månedsinterval for en dato (fra month_interval_history).
+ * Returnerer { start_day, end_day } eller null for standard 1–31.
+ */
+function getMonthIntervalForDate(dateStr) {
+    const row = db.prepare(`
+        SELECT start_day, end_day FROM month_interval_history
+        WHERE effective_from <= ?
+        ORDER BY effective_from DESC
+        LIMIT 1
+    `).get(dateStr);
+    if (!row) return { start_day: 1, end_day: 31 };
+    return { start_day: row.start_day, end_day: row.end_day };
+}
+
+/**
+ * Beregn start- og slutdato for en månedsperiode med brugerdefineret interval.
+ * Eksempel: start_day=16, end_day=15 → 16. jan–15. feb, 16. feb–15. mar osv.
+ */
+function getCustomMonthPeriod(dateStr, startDay, endDay) {
+    const date = new Date(dateStr);
+    const year = date.getFullYear();
+    const month = date.getMonth(); // 0-indexed
+    const day = date.getDate();
+
+    if (startDay <= endDay) {
+        // Samme kalendermåned (fx 1–31)
+        const startDate = new Date(year, month, startDay);
+        const endDate = new Date(year, month, endDay);
+        return { startDate: formatDate(startDate), endDate: formatDate(endDate) };
+    }
+
+    // Perioden spænder over to kalendermåneder (fx 16–15)
+    if (day <= endDay) {
+        // Vi er i den del der slutter denne måned (fx 1–15. feb)
+        const endDate = new Date(year, month, endDay);
+        const startDate = new Date(year, month - 1, startDay);
+        return { startDate: formatDate(startDate), endDate: formatDate(endDate) };
+    } else {
+        // Vi er i den del der starter denne måned (fx 16–28. feb)
+        const startDate = new Date(year, month, startDay);
+        const endDate = new Date(year, month + 1, endDay);
+        return { startDate: formatDate(startDate), endDate: formatDate(endDate) };
+    }
+}
+
 // Ugedagsnavne til database queries
 const WEEKDAY_NAMES = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+
+/**
+ * Sum ekstrabevillingstimer for et barn på en dato (fra-dato <= dateStr <= til-dato).
+ */
+function getExtraGrantHours(childId, dateStr) {
+    const row = db.prepare(`
+        SELECT COALESCE(SUM(hours), 0) as total
+        FROM extra_grants
+        WHERE child_id = ? AND ? >= from_date AND ? <= to_date
+    `).get(childId, dateStr, dateStr);
+    return row?.total ?? 0;
+}
 
 /**
  * Beregn forbrugte timer for et barn i en periode
@@ -183,21 +237,25 @@ export function checkGrant(childId, dateStr, newHours = 0) {
         return checkSpecificWeekdayGrant(child, dateStr, newHours);
     }
 
-    // Standard bevillingscheck
+    // Standard bevillingscheck (inkl. ekstrabevilling)
+    const extraHours = getExtraGrantHours(childId, dateStr);
+    const effectiveGrantHours = child.grant_hours + extraHours;
     const period = getGrantPeriod(child.grant_type, dateStr);
     const usedHours = getUsedHours(childId, period.startDate, period.endDate);
     const totalAfterNew = usedHours + newHours;
 
     return {
-        valid: totalAfterNew <= child.grant_hours,
+        valid: totalAfterNew <= effectiveGrantHours,
         grantType: child.grant_type,
         grantHours: child.grant_hours,
+        extraGrantHours: extraHours,
+        effectiveGrantHours,
         usedHours: usedHours,
-        remainingHours: Math.max(0, child.grant_hours - usedHours),
+        remainingHours: Math.max(0, effectiveGrantHours - usedHours),
         newHours: newHours,
         totalAfterNew: totalAfterNew,
-        exceeded: totalAfterNew > child.grant_hours,
-        exceededBy: Math.max(0, totalAfterNew - child.grant_hours),
+        exceeded: totalAfterNew > effectiveGrantHours,
+        exceededBy: Math.max(0, totalAfterNew - effectiveGrantHours),
         periodStart: period.startDate,
         periodEnd: period.endDate
     };
@@ -212,19 +270,23 @@ function checkFrameGrant(child, dateStr, newHours) {
     const startDate = `${year}-01-01`;
     const endDate = `${year}-12-31`;
 
+    const extraHours = getExtraGrantHours(child.id, dateStr);
+    const effectiveGrantHours = child.frame_hours + extraHours;
     const usedHours = getUsedHours(child.id, startDate, endDate);
     const totalAfterNew = usedHours + newHours;
 
     return {
-        valid: totalAfterNew <= child.frame_hours,
+        valid: totalAfterNew <= effectiveGrantHours,
         grantType: 'frame_grant',
         grantHours: child.frame_hours,
+        extraGrantHours: extraHours,
+        effectiveGrantHours,
         usedHours: usedHours,
-        remainingHours: Math.max(0, child.frame_hours - usedHours),
+        remainingHours: Math.max(0, effectiveGrantHours - usedHours),
         newHours: newHours,
         totalAfterNew: totalAfterNew,
-        exceeded: totalAfterNew > child.frame_hours,
-        exceededBy: Math.max(0, totalAfterNew - child.frame_hours),
+        exceeded: totalAfterNew > effectiveGrantHours,
+        exceededBy: Math.max(0, totalAfterNew - effectiveGrantHours),
         periodStart: startDate,
         periodEnd: endDate,
         isFrameGrant: true
@@ -264,23 +326,26 @@ function checkSpecificWeekdayGrant(child, dateStr, newHours) {
     // Hent periodens start/slut (ugen)
     const period = getGrantPeriod('specific_weekdays', dateStr);
 
-    // Beregn forbrugte timer for denne specifikke ugedag i denne uge
+    // Beregn forbrugte timer for denne specifikke ugedag i denne uge (inkl. ekstrabevilling)
+    const extraHours = getExtraGrantHours(child.id, dateStr);
+    const effectiveGrantHours = grantHours + extraHours;
     const usedHours = getUsedHours(child.id, period.startDate, period.endDate, weekdayName);
-    const grantHours = weekdayGrants[weekdayName];
     const totalAfterNew = usedHours + newHours;
 
     return {
-        valid: totalAfterNew <= grantHours,
+        valid: totalAfterNew <= effectiveGrantHours,
         grantType: 'specific_weekdays',
         weekday: weekdayName,
         weekdayDanish: translateWeekday(weekdayName),
         grantHours: grantHours,
+        extraGrantHours: extraHours,
+        effectiveGrantHours,
         usedHours: usedHours,
-        remainingHours: Math.max(0, grantHours - usedHours),
+        remainingHours: Math.max(0, effectiveGrantHours - usedHours),
         newHours: newHours,
         totalAfterNew: totalAfterNew,
-        exceeded: totalAfterNew > grantHours,
-        exceededBy: Math.max(0, totalAfterNew - grantHours),
+        exceeded: totalAfterNew > effectiveGrantHours,
+        exceededBy: Math.max(0, totalAfterNew - effectiveGrantHours),
         periodStart: period.startDate,
         periodEnd: period.endDate,
         allWeekdayGrants: weekdayGrants
