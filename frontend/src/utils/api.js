@@ -52,11 +52,23 @@ export const timeEntriesApi = {
         method: 'PUT',
         body: JSON.stringify({ reviewed_by: reviewedBy, rejection_reason: reason })
     }),
-    markPayroll: (id) => fetchApi(`/time-entries/${id}/payroll`, { method: 'PUT' }),
+    markPayroll: (id, payrollDate = null) => fetchApi(`/time-entries/${id}/payroll`, {
+        method: 'PUT',
+        body: JSON.stringify(payrollDate != null ? { payroll_date: payrollDate } : {})
+    }),
     batchApprove: (ids, reviewedBy) => fetchApi('/time-entries/batch-approve', {
         method: 'POST',
         body: JSON.stringify({ ids, reviewed_by: reviewedBy })
     })
+};
+
+// Extra grants API
+export const extraGrantsApi = {
+    getAll: (childId = null) => fetchApi(`/extra-grants${childId ? `?child_id=${childId}` : ''}`),
+    getById: (id) => fetchApi(`/extra-grants/${id}`),
+    create: (data) => fetchApi('/extra-grants', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id, data) => fetchApi(`/extra-grants/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    delete: (id) => fetchApi(`/extra-grants/${id}`, { method: 'DELETE' })
 };
 
 // Settings API

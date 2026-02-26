@@ -6,6 +6,7 @@ import caregiversRouter from './routes/caregivers.js';
 import timeEntriesRouter from './routes/timeEntries.js';
 import exportRouter from './routes/export.js';
 import settingsRouter from './routes/settings.js';
+import extraGrantsRouter from './routes/extraGrants.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -29,6 +30,7 @@ app.use('/api/caregivers', caregiversRouter);
 app.use('/api/time-entries', timeEntriesRouter);
 app.use('/api/export', exportRouter);
 app.use('/api/settings', settingsRouter);
+app.use('/api/extra-grants', extraGrantsRouter);
 
 // Health check
 app.get('/api/health', (req, res) => {

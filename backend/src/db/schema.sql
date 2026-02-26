@@ -103,6 +103,21 @@ CREATE TABLE IF NOT EXISTS month_interval_history (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Ekstrabevilling (ud over almindelig bevilling, overruler ikke denne)
+CREATE TABLE IF NOT EXISTS extra_grants (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    child_id INTEGER NOT NULL,
+    hours REAL NOT NULL,
+    from_date DATE NOT NULL,
+    to_date DATE NOT NULL,
+    comment TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (child_id) REFERENCES children(id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_extra_grants_child_id ON extra_grants(child_id);
+CREATE INDEX IF NOT EXISTS idx_extra_grants_dates ON extra_grants(from_date, to_date);
+
 -- Index for hurtigere søgning
 CREATE INDEX IF NOT EXISTS idx_time_entries_child_id ON time_entries(child_id);
 CREATE INDEX IF NOT EXISTS idx_time_entries_caregiver_id ON time_entries(caregiver_id);
