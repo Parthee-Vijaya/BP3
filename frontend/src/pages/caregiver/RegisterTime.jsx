@@ -156,7 +156,7 @@ export default function RegisterTime({ caregiverId = 1 }) {
                         <ClockIcon />
                     </div>
                     <div>
-                        <h2 className="text-2xl font-bold text-gray-900">Registrer Timer</h2>
+                        <h2 className="text-2xl font-bold text-gray-900">Registrer timer</h2>
                         <p className="text-gray-500 mt-0.5">Udfyld formularen for at registrere dine timer</p>
                     </div>
                 </div>

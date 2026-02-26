@@ -136,8 +136,8 @@ export default function ApprovalPage({ isMobileView = false, userRole = 'admin' 
     const [payrollModal, setPayrollModal] = useState({ open: false, entryId: null, payrollDate: new Date().toISOString().slice(0, 10) });
     const [isCompactView, setIsCompactView] = useState(true);
 
-    // Sorterings-state: key + direction (default: dato, nyeste først)
-    const [sortConfig, setSortConfig] = useState({ key: 'date', direction: 'desc' });
+    // Sorterings-state: key + direction (default sættes pr. tab)
+    const [sortConfig, setSortConfig] = useState({ key: 'caregiver_name', direction: 'asc' });
 
     // Periode-søgning for godkendte indberetninger
     const [approvedFromDate, setApprovedFromDate] = useState('');
@@ -151,11 +151,13 @@ export default function ApprovalPage({ isMobileView = false, userRole = 'admin' 
     // Automatisk kompakt visning på mobil
     const effectiveCompactView = isMobileView || isCompactView;
 
-    // Standardsortering pr. tab: Afventer = barnepige, Godkendte = barn, Afviste = barnepige
+    // Standardsortering pr. tab: Afventer/afviste = barnepige, Godkendte = barn
     useEffect(() => {
-        if (activeTab === 'pending') setSortConfig({ key: 'caregiver_name', direction: 'asc' });
-        else if (activeTab === 'approved') setSortConfig({ key: 'child_name', direction: 'asc' });
-        else if (activeTab === 'rejected') setSortConfig({ key: 'caregiver_name', direction: 'asc' });
+        if (activeTab === 'pending' || activeTab === 'rejected') {
+            setSortConfig({ key: 'caregiver_name', direction: 'asc' });
+        } else if (activeTab === 'approved') {
+            setSortConfig({ key: 'child_name', direction: 'asc' });
+        }
     }, [activeTab]);
 
     useEffect(() => {
@@ -249,6 +251,19 @@ export default function ApprovalPage({ isMobileView = false, userRole = 'admin' 
             key,
             direction: prev.key === key && prev.direction === 'asc' ? 'desc' : 'asc'
         }));
+    }
+
+    function resetFilters() {
+        setSearchQuery('');
+        setSelectedChild('all');
+        setSelectedCaregiver('all');
+        setApprovedFromDate('');
+        setApprovedToDate('');
+        if (activeTab === 'pending' || activeTab === 'rejected') {
+            setSortConfig({ key: 'caregiver_name', direction: 'asc' });
+        } else if (activeTab === 'approved') {
+            setSortConfig({ key: 'child_name', direction: 'asc' });
+        }
     }
 
     function getSortValue(entry, key) {
@@ -403,7 +418,7 @@ export default function ApprovalPage({ isMobileView = false, userRole = 'admin' 
 
     function formatTimeBreakdown(entry) {
         const parts = [];
-        if (entry.normal_hours > 0) parts.push({ label: 'Normal', value: entry.normal_hours, color: 'bg-blue-100 text-blue-700' });
+        // Normaltimer vises kun i de samlede tal, ikke som tillægs-badge
         if (entry.evening_hours > 0) parts.push({ label: 'Aften', value: entry.evening_hours, color: 'bg-purple-100 text-purple-700' });
         if (entry.night_hours > 0) parts.push({ label: 'Nat', value: entry.night_hours, color: 'bg-indigo-100 text-indigo-700' });
         if (entry.saturday_hours > 0) parts.push({ label: 'Lørdag', value: entry.saturday_hours, color: 'bg-orange-100 text-orange-700' });
@@ -550,18 +565,14 @@ export default function ApprovalPage({ isMobileView = false, userRole = 'admin' 
                                 </span>
                                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#B54A32]/10 rounded-lg border border-[#B54A32]/20">
                                     <span className="text-sm font-bold text-[#B54A32]">{formatHours(summary.totalHours)}</span>
-                                    <span className="text-xs text-[#B54A32]/70">timer</span>
+                                    <span className="text-xs text-[#B54A32]/70">normaltimer</span>
                                 </span>
                             </div>
                             {/* Separator */}
                             <div className="hidden sm:block h-4 w-px bg-gray-300"></div>
-                            {/* Tillægsfordeling med navne */}
+                            {/* Tillægsfordeling med navne (kun tillægstyper) */}
                             <div className="flex items-center gap-4 text-xs">
                                 <span className="text-gray-400">Fordeling:</span>
-                                <span className="inline-flex items-center gap-1.5">
-                                    <span className="text-gray-500">Normal:</span>
-                                    <span className="font-semibold text-blue-600">{formatHours(summary.normalHours)}</span>
-                                </span>
                                 <span className="inline-flex items-center gap-1.5">
                                     <span className="text-gray-500">Aften:</span>
                                     <span className="font-semibold text-purple-600">{formatHours(summary.eveningHours)}</span>
@@ -647,8 +658,8 @@ export default function ApprovalPage({ isMobileView = false, userRole = 'admin' 
                             </select>
                         </div>
 
-                        {/* Periode-søgning for godkendte - kun for admin */}
-                        {activeTab === 'approved' && userRole === 'admin' && (
+                        {/* Periode-søgning for godkendte - admin og godkender */}
+                        {activeTab === 'approved' && userRole !== 'caregiver' && (
                             <>
                                 <div className="flex items-center gap-2">
                                     <label className="text-xs text-gray-500 font-medium">Fra:</label>
@@ -673,11 +684,20 @@ export default function ApprovalPage({ isMobileView = false, userRole = 'admin' 
                                         onClick={() => { setApprovedFromDate(''); setApprovedToDate(''); }}
                                         className="text-xs text-gray-500 hover:text-[#B54A32] font-medium underline"
                                     >
-                                        Nulstil
+                                        Nulstil periode
                                     </button>
                                 )}
                             </>
                         )}
+
+                        {/* Generel nulstil-knap for filtre */}
+                        <button
+                            type="button"
+                            onClick={resetFilters}
+                            className="px-3 py-2 text-xs font-medium text-gray-600 border border-gray-300 rounded-xl hover:bg-gray-50"
+                        >
+                            Nulstil filtre
+                        </button>
 
                         {activeTab === 'pending' && filteredEntries.length > 0 && (
                             <div className="flex items-center gap-3 ml-auto">

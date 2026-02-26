@@ -38,7 +38,7 @@ export default function App() {
         switch (userRole) {
             case 'admin': return '/admin';
             case 'godkender': return '/godkender/godkendelse';
-            case 'caregiver': return '/barnepige';
+        case 'caregiver': return '/barnepige/registrer';
             default: return '/admin';
         }
     };

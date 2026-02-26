@@ -98,7 +98,7 @@ export default function CaregiverDashboard({ caregiverId = 1 }) {
             <div className="glass-card rounded-2xl p-6 animate-fade-in-up">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
-                        <h2 className="text-2xl font-bold text-gray-900">Mine Børn</h2>
+                        <h2 className="text-2xl font-bold text-gray-900">Mine børn</h2>
                         <p className="text-gray-500 mt-1">Oversigt over tilknyttede børn og bevillinger</p>
                     </div>
                     <Link

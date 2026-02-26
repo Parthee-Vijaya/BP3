@@ -67,7 +67,7 @@ export default function MyTimeEntries({ caregiverId = 1 }) {
                         <ClockIcon />
                     </div>
                     <div>
-                        <h2 className="text-2xl font-bold text-gray-900">Mine Registreringer</h2>
+                        <h2 className="text-2xl font-bold text-gray-900">Mine registreringer</h2>
                         <p className="text-gray-500 mt-0.5">Se status på dine indberettede timer</p>
                     </div>
                 </div>

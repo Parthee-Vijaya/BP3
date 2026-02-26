@@ -1,4 +1,4 @@
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 // Kalundborg Kommune Logo Component (fem-tårnet kirke med bølger)
 const KalundborgLogo = () => (
@@ -91,6 +91,7 @@ const Icons = {
 
 export default function Layout({ children, userRole, onRoleChange, isMobileView, onMobileViewChange }) {
     const location = useLocation();
+    const navigate = useNavigate();
 
     const isActive = (path) => location.pathname === path;
 
@@ -108,9 +109,9 @@ export default function Layout({ children, userRole, onRoleChange, isMobileView,
     ];
 
     const caregiverNavItems = [
-        { path: '/barnepige', label: 'Mine Børn', icon: Icons.child },
-        { path: '/barnepige/registrer', label: 'Registrer Timer', icon: Icons.clock },
-        { path: '/barnepige/mine-timer', label: 'Mine Registreringer', icon: Icons.list },
+        { path: '/barnepige', label: 'Mine børn', icon: Icons.child },
+        { path: '/barnepige/registrer', label: 'Registrer timer', icon: Icons.clock },
+        { path: '/barnepige/mine-timer', label: 'Mine registreringer', icon: Icons.list },
     ];
 
     const getNavItems = () => {
@@ -188,7 +189,17 @@ export default function Layout({ children, userRole, onRoleChange, isMobileView,
                                 <span className="text-sm text-white/60 hidden sm:inline">Vis som:</span>
                                 <select
                                     value={userRole}
-                                    onChange={(e) => onRoleChange(e.target.value)}
+                                    onChange={(e) => {
+                                        const role = e.target.value;
+                                        onRoleChange(role);
+                                        if (role === 'admin') {
+                                            navigate('/admin');
+                                        } else if (role === 'godkender') {
+                                            navigate('/godkender/godkendelse');
+                                        } else if (role === 'caregiver') {
+                                            navigate('/barnepige/registrer');
+                                        }
+                                    }}
                                     className="text-sm bg-white/10 backdrop-blur-sm text-white border border-white/20 rounded-xl px-4 py-2 focus:ring-2 focus:ring-white/30 focus:outline-none cursor-pointer hover:bg-white/20 transition-all shadow-lg"
                                 >
                                     <option value="admin" className="text-gray-900">Administrator</option>
