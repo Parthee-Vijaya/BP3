@@ -1,5 +1,8 @@
 import express from 'express';
 import cors from 'cors';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+import { existsSync } from 'fs';
 import { initializeDatabase } from './db/database.js';
 import childrenRouter from './routes/children.js';
 import caregiversRouter from './routes/caregivers.js';
@@ -7,6 +10,9 @@ import timeEntriesRouter from './routes/timeEntries.js';
 import exportRouter from './routes/export.js';
 import settingsRouter from './routes/settings.js';
 import extraGrantsRouter from './routes/extraGrants.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -41,20 +47,28 @@ app.get('/api/health', (req, res) => {
     });
 });
 
-// Root endpoint
-app.get('/', (req, res) => {
-    res.json({
-        message: 'Barnepige Timeregistrering API',
-        version: '1.0.0',
-        endpoints: {
-            children: '/api/children',
-            caregivers: '/api/caregivers',
-            timeEntries: '/api/time-entries',
-            export: '/api/export',
-            health: '/api/health'
-        }
+// Serve frontend static files in production
+const distPath = join(__dirname, '../../frontend/dist');
+if (existsSync(distPath)) {
+    app.use(express.static(distPath));
+    app.get('*', (req, res) => {
+        res.sendFile(join(distPath, 'index.html'));
     });
-});
+} else {
+    app.get('/', (req, res) => {
+        res.json({
+            message: 'Barnepige Timeregistrering API',
+            version: '1.0.0',
+            endpoints: {
+                children: '/api/children',
+                caregivers: '/api/caregivers',
+                timeEntries: '/api/time-entries',
+                export: '/api/export',
+                health: '/api/health'
+            }
+        });
+    });
+}
 
 // Error handling
 app.use((err, req, res, next) => {
