@@ -39,7 +39,7 @@ Systemet understøtter tre brugerroller med forskellig adgang:
 | Rolle | Rettigheder |
 |-------|-------------|
 | **Administrator** | Fuld adgang: administrer børn, barnepiger, bevillinger, godkend/afvis timer, eksporter CSV, lønregistrering |
-| **Godkender** | Godkend/afvis timeregistreringer, read-only adgang til børn og barnepiger |
+| **Godkender** | Godkend/afvis timeregistreringer, adgang til admin via tandhjulsknap |
 | **Barnepige** | Se tilknyttede børn, registrer timer, se egne registreringer og status |
 
 Rollevalg sker via dropdown i headeren.
@@ -136,6 +136,22 @@ Barnepigen kan følge status på indsendte timer.
 - Advarsler ved bevillingsoverskridelse
 - Kommentarer og afvisningsårsager synlige
 
+### Helligdage
+
+Administration af helligdage med integration til Kalendarium.dk API.
+
+![Helligdage](docs/screenshots/helligdage.png)
+
+**Funktioner:**
+- Officielle danske helligdage hentet live fra Kalendarium.dk API
+- Bevægelige helligdage med faktiske datoer (f.eks. Påskedag → 5. april 2026)
+- Klassifikation: Helligdag, Kirkedag, Mærkedag med farvekodede badges
+- Årsnavigation — skift frit mellem år
+- "Næste helligdag" banner med nedtælling
+- Wikipedia-links til hver helligdag
+- Brugerdefinerede helligdage (CRUD) — tilføj egne helligdage med dato, navn, tidsrum og gentagelse
+- Dimmet visning af passerede datoer, fremhævning af dagens dato
+
 ### Mobilvisning
 
 Responsivt design med dedikeret mobilvisning.
@@ -173,7 +189,7 @@ Timer fordeles automatisk i kategorier baseret på tidspunkt og ugedag:
 |-----|----------|
 | 00:00-23:59 | Søndags- og helligdagstillæg |
 
-**Helligdage overruler andre dage!** Inkluderer: Nytårsdag, 1. maj, Grundlovsdag, Juleaften, Juledag, 2. juledag, Nytårsaften, samt bevægelige helligdage (Skærtorsdag, Langfredag, Påskedag, 2. påskedag, Kr. Himmelfart, Pinsedag, 2. pinsedag).
+**Helligdage overruler andre dage!** Inkluderer faste helligdage (Nytårsdag, 1. maj, Grundlovsdag, Juleaften, Juledag, 2. juledag, Nytårsaften) og bevægelige helligdage (Skærtorsdag, Langfredag, Påskedag, 2. påskedag, Kr. Himmelfart, Pinsedag, 2. pinsedag). Officielle helligdage hentes fra [Kalendarium.dk API](https://kalendarium.dk/) med faktiske datoer. Brugerdefinerede helligdage kan tilføjes via admin.
 
 Timer rundes op til nærmeste kvarter. Tidsformat er decimalt (0,25 / 0,50 / 0,75 / 1,00).
 
@@ -249,6 +265,15 @@ Administratorer kan konfigurere månedsintervallet for bevillingsperioder:
 | `POST` | `/api/extra-grants` | Opret ekstra bevilling |
 | `PUT` | `/api/extra-grants/:id` | Opdater ekstra bevilling |
 | `DELETE` | `/api/extra-grants/:id` | Slet ekstra bevilling |
+
+### Helligdage
+| Metode | Endpoint | Beskrivelse |
+|--------|----------|-------------|
+| `GET` | `/api/holidays` | Alle brugerdefinerede helligdage |
+| `GET` | `/api/holidays/kalendarium/:year` | Officielle helligdage fra Kalendarium.dk (cached) |
+| `POST` | `/api/holidays` | Opret brugerdefineret helligdag |
+| `PUT` | `/api/holidays/:id` | Opdater helligdag |
+| `DELETE` | `/api/holidays/:id` | Slet helligdag |
 
 ### Eksport
 | Metode | Endpoint | Beskrivelse |
