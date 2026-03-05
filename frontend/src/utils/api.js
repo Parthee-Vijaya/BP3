@@ -81,6 +81,15 @@ export const settingsApi = {
     })
 };
 
+// Holidays API
+export const holidaysApi = {
+    getAll: () => fetchApi('/holidays'),
+    getKalendarium: (year) => fetchApi(`/holidays/kalendarium/${year}`),
+    create: (data) => fetchApi('/holidays', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id, data) => fetchApi(`/holidays/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    delete: (id) => fetchApi(`/holidays/${id}`, { method: 'DELETE' })
+};
+
 // Export API
 export const exportApi = {
     timeEntries: (params = {}) => {

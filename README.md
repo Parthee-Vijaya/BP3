@@ -38,7 +38,7 @@ Systemet understøtter tre brugerroller med forskellig adgang:
 
 | Rolle | Rettigheder |
 |-------|-------------|
-| **Administrator** | Fuld adgang: administrer børn, barnepiger, godkend/afvis timer, eksporter CSV |
+| **Administrator** | Fuld adgang: administrer børn, barnepiger, bevillinger, godkend/afvis timer, eksporter CSV, lønregistrering |
 | **Godkender** | Godkend/afvis timeregistreringer, read-only adgang til børn og barnepiger |
 | **Barnepige** | Se tilknyttede børn, registrer timer, se egne registreringer og status |
 
@@ -58,13 +58,18 @@ Komplet godkendelsesworkflow med tre tabs: Afventer, Godkendte og Afviste.
 
 **Funktioner:**
 - **Detaljeret/Kompakt visning** — skift mellem kortvisning og tabelvisning
-- **Opsummeringskort** — total timer, fordeling på tillægstyper (Normal, Aften, Nat, Lørdag, Søn/Hellig)
-- **Batch-godkendelse** — vælg flere registreringer og godkend samlet
+- **Opsummeringskort** — afventende registreringer og antal der overskrider bevilling
+- **Tillægsopsummering** — total timer fordelt på Normal, Aften, Nat, Lørdag, Søn/Hellig
+- **Batch-godkendelse** — vælg flere registreringer og godkend samlet med "Vælg alle"
 - **Filtrering** — søg på navn/MA-nummer, filtrer pr. barn og barnepige
-- **Sortering** — dato (nyeste/ældste), barnepige, barn, timer
+- **Sortering** — barnepige (A-Å/Å-A), barn, dato (nyeste/ældste), timer
 - **Periode-indstilling** — konfigurerbar månedsinterval (f.eks. d. 1-31 eller d. 16-15) med historik
+- **Bevillingsstatus** — progressbar pr. registrering med farveindikator (grøn/gul/rød)
+- **Overskridelses-advarsel** — rød markering af rækker der overskrider bevilling
+- **Inline redigering** — rediger dato og tider direkte i tabellen
+- **Lønregistrering** — marker godkendte timer som lønregistreret
 - **CSV eksport** — eksporter alle registreringer til CSV-fil
-- **Afvisning med årsag** — popup modal til visning af afvisningsårsag
+- **Afvisning med årsag** — popup modal til indtastning af afvisningsårsag
 
 ### Børneadministration
 
@@ -76,6 +81,7 @@ CRUD-operationer for børn med bevillingsopsætning.
 - Søgefelt (navn)
 - Bevillingstype pr. barn (uge, måned, kvartal, halvår, år, specifikke ugedage)
 - Rammebevilling som separat tillæg (årlig bevilling der overruler normal)
+- Ekstra bevillinger — opret, rediger og slet supplerende bevillinger pr. barn
 - Tilknytning af barnepiger til børn
 - Visning af forbrugt vs. bevilget timer
 
@@ -88,7 +94,7 @@ CRUD-operationer for barnepiger med MA-nummer validering.
 **Funktioner:**
 - Søgefelt (navn/MA-nummer)
 - MA-nummer validering (præcis 8 cifre, zero-padded)
-- Oversigt over tilknyttede børn som badges
+- Oversigt over tilknyttede børn som farvede badges
 
 ### Barnepige Dashboard
 
@@ -98,9 +104,11 @@ Barnepigen ser sine tilknyttede børn med bevillingsstatus og hurtige genveje.
 
 **Funktioner:**
 - Kort pr. tilknyttet barn med bevillingstype og forbrug
-- Progress bar for bevillingsstatus
+- Progress bar for bevillingsstatus med farveindikator
+- Advarselsindikator ved bevillingsoverskridelse
+- Periodevisning (f.eks. uge-interval eller måned-interval)
 - Direkte link til timeregistrering pr. barn
-- Hurtig oversigt: antal børn, registreringer, genveje
+- Hurtig oversigt: antal børn, registreringer, genveje til ny registrering og mine timer
 
 ### Registrer timer
 
@@ -109,7 +117,7 @@ Formular til timeregistrering med automatisk tillægsberegning.
 ![Registrer Timer](docs/screenshots/registrer-timer.png)
 
 **Funktioner:**
-- Vælg barn fra dropdown
+- Vælg barn fra dropdown (forudfyldt via direkte link fra dashboard)
 - Datovælger med blokering af fremtidige datoer (visuel advarsel)
 - Start/slut tid med kvarters-afrunding (12:07 → 12:15)
 - Live preview af beregnede tillæg før indsendelse
@@ -124,8 +132,9 @@ Barnepigen kan følge status på indsendte timer.
 
 **Funktioner:**
 - Tabs: Afventer, Godkendt, Afvist
-- Tillægsfordeling pr. registrering (Normal, Aften, Nat)
+- Tillægsfordeling pr. registrering (Normal, Aften, Nat, Lørdag, Søn/Hellig)
 - Advarsler ved bevillingsoverskridelse
+- Kommentarer og afvisningsårsager synlige
 
 ### Mobilvisning
 
@@ -136,8 +145,9 @@ Responsivt design med dedikeret mobilvisning.
 **Funktioner:**
 - Desktop/Mobil toggle i header
 - Automatisk kompakt visning på mobile enheder
-- Tabeller konverteres til kort-layout
+- Tabeller konverteres til kompakt layout
 - Tilpassede filtre og navigation
+- Batch-godkendelse fungerer også på mobil
 
 ## Tillægsregler
 
@@ -172,14 +182,24 @@ Timer rundes op til nærmeste kvarter. Tidsformat er decimalt (0,25 / 0,50 / 0,7
 | Type | Periode |
 |------|---------|
 | **Uge** | Mandag til søndag |
-| **Måned** | 1. til sidste dag |
+| **Måned** | Konfigurerbar (f.eks. d. 1-31 eller d. 16-15) |
 | **Kvartal** | Q1-Q4 |
 | **Halvår** | H1 (jan-jun) / H2 (jul-dec) |
 | **År** | 1. jan til 31. dec |
 | **Specifikke ugedage** | Timer pr. valgt ugedag pr. uge |
 | **Rammebevilling** | Årlig bevilling (overruler normal) |
+| **Ekstra bevilling** | Supplerende bevilling med valgfri periode |
 
 Bevillinger er pr. barn, ikke pr. barnepige. Både afventende og godkendte registreringer tæller med i forbruget.
+
+## Månedsinterval
+
+Administratorer kan konfigurere månedsintervallet for bevillingsperioder:
+
+- Standard: d. 1 til d. 31 (kalendermåned)
+- Alternativ: f.eks. d. 16 til d. 15 (forskudt måned)
+- Ændringer gælder fra dags dato — ingen retroaktive ændringer
+- Fuld historik over intervalændringer
 
 ## Tech Stack
 
@@ -187,27 +207,63 @@ Bevillinger er pr. barn, ikke pr. barnepige. Både afventende og godkendte regis
 - **Backend**: Node.js + Express
 - **Database**: SQLite (better-sqlite3)
 - **Styling**: Kalundborg Kommune branding (#B54A32)
+- **Deployment**: Render.com konfiguration inkluderet
 
 ## API Endpoints
 
+### Børn
 | Metode | Endpoint | Beskrivelse |
 |--------|----------|-------------|
-| `GET` | `/api/children` | Alle børn |
+| `GET` | `/api/children` | Alle børn med tilknyttede barnepiger |
 | `GET` | `/api/children/:id` | Barn med barnepiger og bevillingsstatus |
 | `POST` | `/api/children` | Opret barn |
 | `PUT` | `/api/children/:id` | Opdater barn |
 | `DELETE` | `/api/children/:id` | Slet barn |
-| `GET` | `/api/caregivers` | Alle barnepiger |
+
+### Barnepiger
+| Metode | Endpoint | Beskrivelse |
+|--------|----------|-------------|
+| `GET` | `/api/caregivers` | Alle barnepiger med tilknyttede børn |
+| `GET` | `/api/caregivers/:id` | Barnepige med tilknyttede børn |
 | `POST` | `/api/caregivers` | Opret barnepige |
 | `PUT` | `/api/caregivers/:id` | Opdater barnepige |
 | `DELETE` | `/api/caregivers/:id` | Slet barnepige |
-| `GET` | `/api/time-entries` | Timeregistreringer (filtre: status, child_id, caregiver_id, datointerval) |
-| `POST` | `/api/time-entries` | Opret registrering |
-| `POST` | `/api/time-entries/preview` | Preview tillægsberegning |
+
+### Timeregistreringer
+| Metode | Endpoint | Beskrivelse |
+|--------|----------|-------------|
+| `GET` | `/api/time-entries` | Registreringer (filtre: status, child_id, caregiver_id, datointerval) |
+| `GET` | `/api/time-entries/:id` | Enkelt registrering |
+| `POST` | `/api/time-entries` | Opret registrering med tillægsberegning |
+| `POST` | `/api/time-entries/preview` | Preview tillægsberegning uden oprettelse |
 | `PUT` | `/api/time-entries/:id/approve` | Godkend registrering |
-| `PUT` | `/api/time-entries/:id/reject` | Afvis registrering |
-| `POST` | `/api/time-entries/batch-approve` | Batch-godkend flere |
-| `GET` | `/api/export/time-entries` | CSV eksport |
-| `GET` | `/api/export/children` | CSV eksport af børn |
-| `GET/PUT` | `/api/settings/month-interval` | Månedsinterval indstilling |
-| `GET` | `/api/health` | Sundhedstjek |
+| `PUT` | `/api/time-entries/:id/reject` | Afvis registrering (kræver årsag) |
+| `PUT` | `/api/time-entries/:id/payroll` | Marker som lønregistreret |
+| `POST` | `/api/time-entries/batch-approve` | Batch-godkend flere registreringer |
+
+### Ekstra bevillinger
+| Metode | Endpoint | Beskrivelse |
+|--------|----------|-------------|
+| `GET` | `/api/extra-grants` | Alle ekstra bevillinger (valgfrit: `?child_id=`) |
+| `GET` | `/api/extra-grants/:id` | Enkelt ekstra bevilling |
+| `POST` | `/api/extra-grants` | Opret ekstra bevilling |
+| `PUT` | `/api/extra-grants/:id` | Opdater ekstra bevilling |
+| `DELETE` | `/api/extra-grants/:id` | Slet ekstra bevilling |
+
+### Eksport
+| Metode | Endpoint | Beskrivelse |
+|--------|----------|-------------|
+| `GET` | `/api/export/time-entries` | CSV/JSON eksport (filtre: status, barn, barnepige, dato, format) |
+| `GET` | `/api/export/children` | CSV/JSON eksport af børn |
+
+### Indstillinger
+| Metode | Endpoint | Beskrivelse |
+|--------|----------|-------------|
+| `GET` | `/api/settings/month-interval` | Nuværende månedsinterval |
+| `GET` | `/api/settings/month-interval/history` | Historik over intervalændringer |
+| `PUT` | `/api/settings/month-interval` | Opdater månedsinterval (fra dags dato) |
+
+### Sundhedstjek
+| Metode | Endpoint | Beskrivelse |
+|--------|----------|-------------|
+| `GET` | `/api/health` | API sundhedstjek |

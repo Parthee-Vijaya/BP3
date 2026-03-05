@@ -371,8 +371,8 @@ export default function RegisterTime({ caregiverId = 1 }) {
                                             <span>Bevilling overskrides!</span>
                                         </div>
                                         <div className="mt-2 text-sm space-y-1">
-                                            <div>Forbrugt: {formatHours(preview.grantStatus.usedHours)} / {formatHours(preview.grantStatus.grantHours)} timer</div>
-                                            <div>Efter registrering: {formatHours(preview.grantStatus.totalAfterNew)} timer</div>
+                                            <div>Inden registrering: {formatHours(preview.grantStatus.usedHours)} / {formatHours(preview.grantStatus.grantHours)} timer</div>
+                                            <div>Efter registrering: {formatHours(preview.grantStatus.totalAfterNew)} / {formatHours(preview.grantStatus.grantHours)} timer</div>
                                             <div className="font-semibold">Overskredet med: {formatHours(preview.grantStatus.exceededBy)} timer</div>
                                             <div className="mt-2 p-2 bg-rose-50 border border-rose-200 rounded text-rose-800 text-xs">
                                                 Det indtastede antal timer overskrider bevillingen. Det er godkender/leders opgave at sikre at det kan godkendes.
@@ -386,7 +386,8 @@ export default function RegisterTime({ caregiverId = 1 }) {
                                             <span>Inden for bevilling</span>
                                         </div>
                                         <div className="mt-2 text-sm space-y-1">
-                                            <div>Forbrugt: {formatHours(preview.grantStatus.usedHours)} / {formatHours(preview.grantStatus.grantHours)} timer</div>
+                                            <div>Inden registrering: {formatHours(preview.grantStatus.usedHours)} / {formatHours(preview.grantStatus.grantHours)} timer</div>
+                                            <div>Efter registrering: {formatHours((preview.grantStatus.usedHours || 0) + (preview.allowances?.total_hours || 0))} / {formatHours(preview.grantStatus.grantHours)} timer</div>
                                             <div className="font-semibold">Resterende: {formatHours(preview.grantStatus.remainingHours)} timer</div>
                                         </div>
                                     </div>

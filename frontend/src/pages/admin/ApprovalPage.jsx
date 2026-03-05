@@ -280,6 +280,8 @@ export default function ApprovalPage({ isMobileView = false, userRole = 'admin' 
                 return entry.total_hours;
             case 'ma_number':
                 return entry.ma_number || '';
+            case 'payroll_date':
+                return entry.payroll_date || 'zzz';
             default:
                 return '';
         }
@@ -343,14 +345,14 @@ export default function ApprovalPage({ isMobileView = false, userRole = 'admin' 
     }
 
     function openPayrollModal(entryId) {
-        setPayrollModal({ open: true, entryId, payrollDate: new Date().toISOString().slice(0, 10) });
+        setPayrollModal({ open: true, entryId, payrollDate: new Date().toISOString() });
     }
 
     async function handleMarkPayroll() {
         if (!payrollModal.entryId) return;
         try {
-            await timeEntriesApi.markPayroll(payrollModal.entryId, payrollModal.payrollDate);
-            setPayrollModal({ open: false, entryId: null, payrollDate: new Date().toISOString().slice(0, 10) });
+            await timeEntriesApi.markPayroll(payrollModal.entryId, new Date().toISOString());
+            setPayrollModal({ open: false, entryId: null, payrollDate: new Date().toISOString() });
             loadData();
         } catch (error) {
             alert('Fejl: ' + error.message);
@@ -450,35 +452,43 @@ export default function ApprovalPage({ isMobileView = false, userRole = 'admin' 
 
     return (
         <div className="space-y-6">
-            {/* Header */}
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200 animate-fade-in">
-                <div className="flex items-center justify-between mb-4">
-                    <div>
-                        <h2 className="text-2xl font-bold text-gray-900">Godkendelse af timer</h2>
-                        <p className="text-gray-500 mt-1">Gennemgå og godkend timeregistreringer fra barnepiger</p>
+            {/* Header - compact single line */}
+            <div className="bg-white rounded-xl px-4 py-2.5 shadow-sm border border-gray-200 animate-fade-in">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        <h2 className="text-base font-bold text-gray-900">Godkendelse af timer</h2>
+                        {activeTab === 'pending' && filteredEntries.length > 0 && (
+                            <div className="flex items-center gap-3">
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-gray-100 rounded-lg border border-gray-200 text-xs">
+                                    <span className="font-semibold text-gray-900">{filteredEntries.length}</span>
+                                    <span className="text-gray-500">afventer</span>
+                                </span>
+                                {exceededCount > 0 && (
+                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-rose-50 rounded-lg border border-rose-200 text-xs">
+                                        <span className="font-semibold text-rose-600">{exceededCount}</span>
+                                        <span className="text-rose-500">overskrider</span>
+                                    </span>
+                                )}
+                            </div>
+                        )}
                     </div>
-                    <div className="flex items-center gap-3">
-                        {/* Månedsinterval indstilling - kun for admin */}
+                    <div className="flex items-center gap-2">
                         {userRole === 'admin' && (
                             <button
                                 onClick={() => setShowMonthIntervalModal(true)}
-                                className="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-all font-medium text-sm"
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all font-medium text-xs"
                                 title="Indstil månedsinterval"
                             >
                                 <SettingsIcon />
-                                <span className="hidden sm:inline">
-                                    Periode: d. {monthInterval.start_day} - d. {monthInterval.end_day}
-                                </span>
+                                <span className="hidden sm:inline">d. {monthInterval.start_day}-{monthInterval.end_day}</span>
                             </button>
                         )}
-
-                        {/* View toggle */}
-                        <div className="flex bg-gray-100 rounded-xl p-1 border border-gray-200">
+                        <div className="flex bg-gray-100 rounded-lg p-0.5 border border-gray-200">
                             <button
                                 onClick={() => setIsCompactView(false)}
-                                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
                                     !effectiveCompactView
-                                        ? 'bg-white text-[#B54A32] shadow-md'
+                                        ? 'bg-white text-[#B54A32] shadow-sm'
                                         : 'text-gray-500 hover:text-gray-700'
                                 }`}
                             >
@@ -487,9 +497,9 @@ export default function ApprovalPage({ isMobileView = false, userRole = 'admin' 
                             </button>
                             <button
                                 onClick={() => setIsCompactView(true)}
-                                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
                                     effectiveCompactView
-                                        ? 'bg-white text-[#B54A32] shadow-md'
+                                        ? 'bg-white text-[#B54A32] shadow-sm'
                                         : 'text-gray-500 hover:text-gray-700'
                                 }`}
                             >
@@ -497,40 +507,24 @@ export default function ApprovalPage({ isMobileView = false, userRole = 'admin' 
                                 Kompakt
                             </button>
                         </div>
-
                         <a
                             href={exportApi.timeEntries({ status: activeTab })}
                             download
-                            className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-xl hover:from-emerald-600 hover:to-emerald-700 transition-all font-medium shadow-lg shadow-emerald-500/25"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-lg hover:from-emerald-600 hover:to-emerald-700 transition-all font-medium text-xs shadow-md shadow-emerald-500/25"
                         >
                             <DownloadIcon />
-                            Eksporter CSV
+                            CSV
                         </a>
                     </div>
                 </div>
-
-                {/* Stats cards */}
-                {activeTab === 'pending' && filteredEntries.length > 0 && (
-                    <div className="grid grid-cols-2 gap-4 mt-4">
-                        <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
-                            <div className="text-3xl font-bold text-gray-900">{filteredEntries.length}</div>
-                            <div className="text-sm text-gray-500">Afventer godkendelse</div>
-                        </div>
-                        <div className="bg-rose-50 rounded-xl p-4 border border-rose-200">
-                            <div className="flex items-center gap-2">
-                                <div className="text-3xl font-bold text-rose-600">{exceededCount}</div>
-                                {exceededCount > 0 && <WarningIcon className="text-rose-500" />}
-                            </div>
-                            <div className="text-sm text-rose-600">Overskrider bevilling</div>
-                        </div>
-                    </div>
-                )}
             </div>
 
             {/* Main Content */}
-            <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-200 animate-fade-in-up">
+            <div className="bg-white rounded-2xl overflow-clip shadow-sm border border-gray-200 animate-fade-in-up">
+                {/* Sticky wrapper for tabs + summary + filters */}
+                <div className="sticky top-[124px] z-20 bg-white rounded-t-2xl">
                 {/* Tabs */}
-                <div className="border-b border-gray-200 flex bg-gray-50">
+                <div className="border-b border-gray-200 flex bg-gray-50 rounded-t-2xl">
                     {tabs.map((tab) => (
                         <button
                             key={tab.id}
@@ -722,6 +716,7 @@ export default function ApprovalPage({ isMobileView = false, userRole = 'admin' 
                         )}
                     </div>
                 </div>
+                </div>{/* End sticky wrapper */}
 
                 {/* Content */}
                 {loading ? (
@@ -743,9 +738,9 @@ export default function ApprovalPage({ isMobileView = false, userRole = 'admin' 
                     </div>
                 ) : effectiveCompactView ? (
                     /* COMPACT TABLE VIEW */
-                    <div className="overflow-x-auto">
+                    <div>
                         <table className="w-full">
-                            <thead className="bg-gray-50/80">
+                            <thead className="bg-white/95 backdrop-blur-sm sticky top-[305px] z-10 shadow-sm">
                                 <tr>
                                     {activeTab === 'pending' && (
                                         <th className="px-4 py-3 text-left">
@@ -764,6 +759,9 @@ export default function ApprovalPage({ isMobileView = false, userRole = 'admin' 
                                     <SortableHeader label="Timer" sortKey="total_hours" currentSort={sortConfig} onSort={handleSort} className="text-right" />
                                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Tillæg</th>
                                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Bevilling</th>
+                                    {activeTab === 'approved' && (
+                                        <SortableHeader label="Overført til løn" sortKey="payroll_date" currentSort={sortConfig} onSort={handleSort} className="text-left" />
+                                    )}
                                     <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Handlinger</th>
                                 </tr>
                             </thead>
@@ -843,7 +841,7 @@ export default function ApprovalPage({ isMobileView = false, userRole = 'admin' 
                                                         }`}>
                                                             {formatHours(grantStatus.usedHours)}/{formatHours(grantStatus.grantHours)}
                                                             {isExceeded && (
-                                                                <span className="ml-1" title="Det indtastede antal timer overskrider bevillingen. Det er godkender/leders opgave at sikre at det kan godkendes.">⚠️</span>
+                                                                <span className="ml-1 text-rose-500" title="Overskrider bevilling">▲</span>
                                                             )}
                                                         </div>
                                                         <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
@@ -857,6 +855,17 @@ export default function ApprovalPage({ isMobileView = false, userRole = 'admin' 
                                                     </div>
                                                 )}
                                             </td>
+                                            {activeTab === 'approved' && (
+                                                <td className="px-4 py-3">
+                                                    {entry.payroll_date ? (
+                                                        <span className="text-xs text-emerald-600 font-medium">
+                                                            {new Date(entry.payroll_date).toLocaleString('da-DK', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                                                        </span>
+                                                    ) : (
+                                                        <span className="text-xs text-gray-400">—</span>
+                                                    )}
+                                                </td>
+                                            )}
                                             <td className="px-4 py-3 text-right">
                                                 {activeTab === 'pending' && (
                                                     <div className="flex justify-end gap-2">
@@ -874,29 +883,24 @@ export default function ApprovalPage({ isMobileView = false, userRole = 'admin' 
                                                         </button>
                                                     </div>
                                                 )}
-                                                {activeTab === 'approved' && (
-                                                    <div className="flex justify-end items-center gap-2">
-                                                        {entry.payroll_date ? (
-                                                            <span className="text-xs text-emerald-600 font-medium">
-                                                                Sendt {formatShortDate(entry.payroll_date)}
-                                                            </span>
-                                                        ) : (
-                                                            <button
-                                                                onClick={() => openPayrollModal(entry.id)}
-                                                                className="px-3 py-1.5 bg-[#B54A32] text-white text-xs rounded-lg font-medium hover:bg-[#9a3f2b] transition-colors"
-                                                            >
-                                                                Send til løn
-                                                            </button>
-                                                        )}
-                                                    </div>
-                                                )}
-                                                {activeTab === 'rejected' && (
+                                                {activeTab === 'approved' && !entry.payroll_date && (
                                                     <button
-                                                        onClick={() => setViewReasonModal({ open: true, reason: entry.rejection_reason, entry })}
-                                                        className="text-rose-600 hover:text-rose-700 text-xs font-medium underline"
+                                                        onClick={() => openPayrollModal(entry.id)}
+                                                        className="px-3 py-1.5 bg-[#B54A32] text-white text-xs rounded-lg font-medium hover:bg-[#9a3f2b] transition-colors"
                                                     >
-                                                        Se årsag
+                                                        Indberettet manuelt
                                                     </button>
+                                                )}
+                                                {activeTab === 'rejected' && entry.rejection_reason && (
+                                                    <span
+                                                        className="text-rose-600 text-xs font-medium cursor-default"
+                                                        title={entry.rejection_reason}
+                                                    >
+                                                        {entry.rejection_reason.length > 50
+                                                            ? entry.rejection_reason.slice(0, 50) + '…'
+                                                            : entry.rejection_reason
+                                                        }
+                                                    </span>
                                                 )}
                                             </td>
                                         </tr>
@@ -1318,14 +1322,8 @@ export default function ApprovalPage({ isMobileView = false, userRole = 'admin' 
             {payrollModal.open && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
                     <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm">
-                        <h3 className="text-lg font-bold text-gray-900 mb-2">Registreret i lønsystem</h3>
-                        <p className="text-sm text-gray-500 mb-4">Vælg dato for indberetning (fx ved manuel indberetning).</p>
-                        <input
-                            type="date"
-                            value={payrollModal.payrollDate}
-                            onChange={(e) => setPayrollModal({ ...payrollModal, payrollDate: e.target.value })}
-                            className="w-full border border-gray-300 rounded-xl px-4 py-3 mb-4 focus:ring-2 focus:ring-[#B54A32]/20"
-                        />
+                        <h3 className="text-lg font-bold text-gray-900 mb-2">Indberettet manuelt</h3>
+                        <p className="text-sm text-gray-500 mb-4">Bekræft manuel indberetning til løn. Nuværende dato og tidspunkt registreres.</p>
                         <div className="flex gap-3">
                             <button onClick={handleMarkPayroll} className="flex-1 px-4 py-3 btn-kalundborg rounded-xl font-medium">
                                 Gem

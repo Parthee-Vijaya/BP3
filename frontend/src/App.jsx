@@ -8,6 +8,8 @@ import ApprovalPage from './pages/admin/ApprovalPage';
 import ChildrenPage from './pages/admin/ChildrenPage';
 import CaregiversPage from './pages/admin/CaregiversPage';
 
+import HolidaysPage from './pages/admin/HolidaysPage';
+
 // Caregiver pages
 import CaregiverDashboard from './pages/caregiver/CaregiverDashboard';
 import RegisterTime from './pages/caregiver/RegisterTime';
@@ -16,7 +18,8 @@ import MyTimeEntries from './pages/caregiver/MyTimeEntries';
 export default function App() {
     // Demo: simpel rolle-skift (i produktion ville dette komme fra auth)
     // Roller: 'admin', 'godkender', 'caregiver'
-    const [userRole, setUserRole] = useState('admin');
+    const [userRole, setUserRole] = useState('godkender');
+    const [hasAdminAccess] = useState(true);
 
     // Demo barnepige ID (i produktion ville dette komme fra auth)
     const caregiverId = 1;
@@ -38,7 +41,7 @@ export default function App() {
         switch (userRole) {
             case 'admin': return '/admin';
             case 'godkender': return '/godkender/godkendelse';
-        case 'caregiver': return '/barnepige/registrer';
+        case 'caregiver': return '/barnepige/mine-timer';
             default: return '/admin';
         }
     };
@@ -49,6 +52,7 @@ export default function App() {
             onRoleChange={setUserRole}
             isMobileView={isMobileView}
             onMobileViewChange={setIsMobileView}
+            hasAdminAccess={hasAdminAccess}
         >
             <Routes>
                 {/* Root redirect */}
@@ -62,12 +66,11 @@ export default function App() {
                 <Route path="/admin/godkendelse" element={<ApprovalPage isMobileView={isMobileView} userRole={userRole} />} />
                 <Route path="/admin/boern" element={<ChildrenPage isMobileView={isMobileView} userRole={userRole} />} />
                 <Route path="/admin/barnepiger" element={<CaregiversPage isMobileView={isMobileView} userRole={userRole} />} />
+                <Route path="/admin/helligdage" element={<HolidaysPage />} />
 
-                {/* Godkender routes - read-only på børn/barnepiger */}
+                {/* Godkender routes - kun godkendelse */}
                 <Route path="/godkender" element={<Navigate to="/godkender/godkendelse" replace />} />
                 <Route path="/godkender/godkendelse" element={<ApprovalPage isMobileView={isMobileView} userRole={userRole} />} />
-                <Route path="/godkender/boern" element={<ChildrenPage isMobileView={isMobileView} userRole={userRole} readOnly />} />
-                <Route path="/godkender/barnepiger" element={<CaregiversPage isMobileView={isMobileView} userRole={userRole} readOnly />} />
 
                 {/* Caregiver routes */}
                 <Route path="/barnepige" element={<CaregiverDashboard caregiverId={caregiverId} isMobileView={isMobileView} />} />

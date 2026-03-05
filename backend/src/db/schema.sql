@@ -118,6 +118,18 @@ CREATE TABLE IF NOT EXISTS extra_grants (
 CREATE INDEX IF NOT EXISTS idx_extra_grants_child_id ON extra_grants(child_id);
 CREATE INDEX IF NOT EXISTS idx_extra_grants_dates ON extra_grants(from_date, to_date);
 
+-- Brugerdefinerede helligdage
+CREATE TABLE IF NOT EXISTS custom_holidays (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    date TEXT NOT NULL,
+    name TEXT NOT NULL,
+    all_day INTEGER DEFAULT 1,
+    start_time TEXT,
+    end_time TEXT,
+    recurring INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Index for hurtigere søgning
 CREATE INDEX IF NOT EXISTS idx_time_entries_child_id ON time_entries(child_id);
 CREATE INDEX IF NOT EXISTS idx_time_entries_caregiver_id ON time_entries(caregiver_id);
