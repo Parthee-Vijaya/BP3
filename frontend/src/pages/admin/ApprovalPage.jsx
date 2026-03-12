@@ -105,12 +105,13 @@ function getDayName(dateString) {
 // Sorterbar kolonneheader
 function SortableHeader({ label, sortKey, currentSort, onSort, className = '' }) {
     const isActive = currentSort.key === sortKey;
+    const isRight = className.includes('text-right');
     return (
         <th
             className={`px-4 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none transition-colors ${className}`}
             onClick={() => onSort(sortKey)}
         >
-            <div className="flex items-center gap-1">
+            <div className={`flex items-center gap-1 ${isRight ? 'justify-end' : ''}`}>
                 {label}
                 {isActive && <SortIcon direction={currentSort.direction} />}
             </div>
@@ -520,7 +521,7 @@ export default function ApprovalPage({ isMobileView = false, userRole = 'admin' 
             </div>
 
             {/* Main Content */}
-            <div className="bg-white rounded-2xl overflow-clip shadow-sm border border-gray-200 animate-fade-in-up">
+            <div className="bg-white rounded-2xl overflow-clip shadow-sm border border-gray-200 animate-fade-in-up max-w-6xl mx-auto">
                 {/* Sticky wrapper for tabs + summary + filters */}
                 <div className="sticky top-[124px] z-20 bg-white rounded-t-2xl">
                 {/* Tabs */}
@@ -756,13 +757,13 @@ export default function ApprovalPage({ isMobileView = false, userRole = 'admin' 
                                     <SortableHeader label="Barn" sortKey="child_name" currentSort={sortConfig} onSort={handleSort} className="text-left" />
                                     <SortableHeader label="Dato" sortKey="date" currentSort={sortConfig} onSort={handleSort} className="text-left" />
                                     <SortableHeader label="Tid" sortKey="time" currentSort={sortConfig} onSort={handleSort} className="text-left" />
-                                    <SortableHeader label="Timer" sortKey="total_hours" currentSort={sortConfig} onSort={handleSort} className="text-right" />
+                                    <SortableHeader label="Timer" sortKey="total_hours" currentSort={sortConfig} onSort={handleSort} className="text-center" />
                                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Tillæg</th>
                                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Bevilling</th>
                                     {activeTab === 'approved' && (
-                                        <SortableHeader label="Overført til løn" sortKey="payroll_date" currentSort={sortConfig} onSort={handleSort} className="text-left" />
+                                        <SortableHeader label="Overført til løn" sortKey="payroll_date" currentSort={sortConfig} onSort={handleSort} className="text-left w-44" />
                                     )}
-                                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Handlinger</th>
+                                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider w-40">Handlinger</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
@@ -835,7 +836,7 @@ export default function ApprovalPage({ isMobileView = false, userRole = 'admin' 
                                             </td>
                                             <td className="px-4 py-3">
                                                 {grantStatus && (
-                                                    <div className="min-w-[120px]">
+                                                    <div className="w-28 max-w-[7rem]">
                                                         <div className={`text-xs font-medium mb-1 ${
                                                             isExceeded ? 'text-rose-600' : 'text-emerald-600'
                                                         }`}>
@@ -844,7 +845,7 @@ export default function ApprovalPage({ isMobileView = false, userRole = 'admin' 
                                                                 <span className="ml-1 text-rose-500" title="Overskrider bevilling">▲</span>
                                                             )}
                                                         </div>
-                                                        <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                                                        <div className="h-1.5 w-full bg-gray-200 rounded-full overflow-hidden">
                                                             <div
                                                                 className={`h-full rounded-full ${
                                                                     isExceeded ? 'bg-rose-500' : 'bg-emerald-500'
@@ -858,11 +859,16 @@ export default function ApprovalPage({ isMobileView = false, userRole = 'admin' 
                                             {activeTab === 'approved' && (
                                                 <td className="px-4 py-3">
                                                     {entry.payroll_date ? (
-                                                        <span className="text-xs text-emerald-600 font-medium">
-                                                            {new Date(entry.payroll_date).toLocaleString('da-DK', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                                                        </span>
+                                                        <div className="flex items-center gap-1.5">
+                                                            <svg className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                                                            </svg>
+                                                            <span className="text-xs text-emerald-600 font-medium">
+                                                                {new Date(entry.payroll_date).toLocaleString('da-DK', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                                            </span>
+                                                        </div>
                                                     ) : (
-                                                        <span className="text-xs text-gray-400">—</span>
+                                                        <span className="text-xs text-gray-400 italic">Afventer</span>
                                                     )}
                                                 </td>
                                             )}
@@ -890,6 +896,14 @@ export default function ApprovalPage({ isMobileView = false, userRole = 'admin' 
                                                     >
                                                         Indberettet manuelt
                                                     </button>
+                                                )}
+                                                {activeTab === 'approved' && entry.payroll_date && (
+                                                    <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-50 text-emerald-600 text-xs font-medium rounded-lg border border-emerald-100">
+                                                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                                                        </svg>
+                                                        Indberettet
+                                                    </span>
                                                 )}
                                                 {activeTab === 'rejected' && entry.rejection_reason && (
                                                     <span
