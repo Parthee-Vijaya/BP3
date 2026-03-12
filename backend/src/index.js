@@ -10,6 +10,7 @@ import timeEntriesRouter from './routes/timeEntries.js';
 import exportRouter from './routes/export.js';
 import settingsRouter from './routes/settings.js';
 import extraGrantsRouter from './routes/extraGrants.js';
+import holidaysRouter from './routes/holidays.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -37,6 +38,7 @@ app.use('/api/time-entries', timeEntriesRouter);
 app.use('/api/export', exportRouter);
 app.use('/api/settings', settingsRouter);
 app.use('/api/extra-grants', extraGrantsRouter);
+app.use('/api/holidays', holidaysRouter);
 
 // Health check
 app.get('/api/health', (req, res) => {

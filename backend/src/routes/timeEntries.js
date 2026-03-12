@@ -276,7 +276,7 @@ router.put('/:id/payroll', (req, res) => {
             });
         }
 
-        const dateValue = payroll_date || new Date().toISOString().slice(0, 10);
+        const dateValue = payroll_date || new Date().toISOString();
         db.prepare(`
             UPDATE time_entries SET
                 payroll_registered = 1,

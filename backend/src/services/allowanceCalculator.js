@@ -20,6 +20,8 @@
  * OBS: Helligdage OVERRULER andre dage!
  */
 
+import db from '../db/database.js';
+
 // Danske helligdage (beregnes dynamisk)
 function getDanishHolidays(year) {
     const holidays = [];
@@ -94,12 +96,24 @@ function formatDate(date) {
     return `${year}-${month}-${day}`;
 }
 
-// Tjek om en dato er en helligdag
+// Tjek om en dato er en helligdag (hardcoded + custom fra DB)
 function isHoliday(dateStr) {
     const date = new Date(dateStr);
     const year = date.getFullYear();
     const holidays = getDanishHolidays(year);
-    return holidays.includes(dateStr);
+    if (holidays.includes(dateStr)) return true;
+
+    try {
+        const monthDay = dateStr.slice(5);
+        const custom = db.prepare(
+            `SELECT * FROM custom_holidays
+             WHERE (date = ? AND recurring = 0)
+                OR (recurring = 1 AND substr(date, 6) = ?)`
+        ).get(dateStr, monthDay);
+        return !!custom;
+    } catch {
+        return false;
+    }
 }
 
 // Få ugedagsnummer (0 = søndag, 6 = lørdag)

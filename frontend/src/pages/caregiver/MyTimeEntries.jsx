@@ -117,9 +117,6 @@ export default function MyTimeEntries({ caregiverId = 1 }) {
                             >
                                 <div className="flex items-start justify-between gap-4">
                                     <div className="flex items-start gap-4">
-                                        <div className="w-12 h-12 bg-gradient-to-br from-[#B54A32] to-[#9a3f2b] rounded-xl flex items-center justify-center text-white text-sm font-bold shadow-lg shadow-[#B54A32]/20">
-                                            {entry.child_first_name?.charAt(0)}{entry.child_last_name?.charAt(0)}
-                                        </div>
                                         <div>
                                             <div className="font-bold text-gray-900">
                                                 {entry.child_first_name} {entry.child_last_name}
